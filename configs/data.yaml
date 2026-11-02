@@ -1,0 +1,23 @@
+# Inside Airbnb snapshots (CC BY 4.0). Slugs must match the URLs on https://insideairbnb.com/get-the-data/
+# `date: latest` resolves the newest snapshot at download time; pin dates for exact reproducibility
+# (the resolved dates are written to data/raw/MANIFEST.json).
+cities:
+  - {country: united-kingdom, region: england, city: london, date: latest}
+  - {country: united-states, region: ny, city: new-york-city, date: latest}
+  - {country: australia, region: nsw, city: sydney, date: latest}
+  - {country: canada, region: on, city: toronto, date: latest}
+  - {country: ireland, region: leinster, city: dublin, date: latest}
+
+raw_dir: data/raw
+processed_dir: data/processed
+language: en
+min_description_chars: 200
+max_description_chars: 2000
+min_title_chars: 10
+max_title_chars: 50
+min_reviews: 5
+min_rating: 4.7
+engagement_quantile: 0.66
+test_fraction: 0.1
+val_fraction: 0.05
+seed: 42

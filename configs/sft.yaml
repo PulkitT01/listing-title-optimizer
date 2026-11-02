@@ -1,0 +1,21 @@
+# Stage 1: supervised fine-tuning on titles of high-engagement listings.
+stage: sft
+model:
+  base_model: Qwen/Qwen3-4B-Instruct-2507   # non-thinking instruct model, Apache-2.0
+  load_in_4bit: false                       # true = QLoRA (needs `uv sync --extra cuda`)
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_modules: all-linear
+train_file: data/processed/sft_train.jsonl
+eval_file: data/processed/sft_val.jsonl
+output_dir: outputs/sft
+learning_rate: 2.0e-4
+num_train_epochs: 1
+per_device_train_batch_size: 8
+gradient_accumulation_steps: 2
+max_length: 1024
+logging_steps: 10
+save_steps: 500
+report_to: none   # wandb | trackio | none
+seed: 42
