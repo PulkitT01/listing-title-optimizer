@@ -1,0 +1,64 @@
+[project]
+name = "listing-title-optimizer"
+version = "0.1.0"
+description = "Preference-tuning a small open LLM to write faithful, high-converting Airbnb listing titles (SFT -> DPO -> GRPO with verifiable rewards)."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Pulkit Thukral" }]
+dependencies = [
+    "torch>=2.6",
+    "transformers>=4.56",
+    "trl>=1.0,<2",
+    "peft>=0.17",
+    "accelerate>=1.10",
+    "datasets>=4.0",
+    "pandas>=2.2",
+    "pyyaml>=6.0",
+    "typer>=0.16",
+    "openai>=1.100",
+    "httpx>=0.27",
+    "rich>=13",
+]
+
+[project.optional-dependencies]
+# 4-bit QLoRA on NVIDIA GPUs
+cuda = ["bitsandbytes>=0.46"]
+# Experiment tracking
+tracking = ["wandb>=0.21"]
+# Gradio demo (also used on Hugging Face Spaces)
+app = ["gradio>=5"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.12",
+    "pre-commit>=4",
+    "mypy>=2.4.1",
+]
+
+[project.scripts]
+title-opt = "title_optimizer.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/title_optimizer"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]  # line length is handled by the formatter
+
+[tool.mypy]
+files = ["src"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: runs real (tiny) training loops; deselect with -m 'not slow'"]

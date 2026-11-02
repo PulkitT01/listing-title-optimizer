@@ -1,0 +1,28 @@
+# Stage 3: GRPO from the SFT model with verifiable rewards (+ optional LLM-judge reward).
+stage: grpo
+model:
+  base_model: Qwen/Qwen3-4B-Instruct-2507
+  load_in_4bit: false
+  lora_r: 16
+  lora_alpha: 32
+init_adapter: outputs/sft
+train_file: data/processed/train.jsonl
+max_train_samples: 4000
+output_dir: outputs/grpo
+learning_rate: 1.0e-5
+max_steps: 500
+per_device_train_batch_size: 8   # completions per device step; keep divisible by num_generations
+gradient_accumulation_steps: 4
+num_generations: 8
+max_completion_length: 32
+temperature: 0.9
+beta: 0.04
+reward_weights:
+  length: 1.0
+  style: 0.5
+  faithfulness: 2.0
+  judge: 0.0      # set >0 and pass --judge-config configs/judge.yaml to add the LLM judge
+logging_steps: 5
+save_steps: 100
+report_to: none
+seed: 42
