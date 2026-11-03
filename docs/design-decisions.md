@@ -39,8 +39,14 @@ SFT loss was identical with checkpointing on and off. CPU stays off, which keeps
 batch size for SFT and DPO. Cap SFT at 5,000 samples, use 500 preference listings, and lower GRPO to
 4 generations per prompt.
 
-**Why:** Measured on maximum-length listings, SFT would take about 6 hours and DPO about 1.7 hours.
-GRPO at 500 steps would take about 16 hours, which is why it runs separately.
+**Why:** The full pipeline has to finish on one Mac in about a day. Measured times on real data:
+
+| Stage | Work | Time |
+|---|---|---|
+| SFT | 313 steps, ~45 s each | 3 h 55 min |
+| Preferences | 2,000 samples + 3,007 Haiku judgments | 1 h |
+| DPO | 625 pairs, 40 steps | 1 h 9 min |
+| GRPO | 500 steps, ~75 s each | 10 h 26 min |
 
 **Cost:** Less data, and fewer GRPO generations per prompt mean less reward variation to learn from.
 
@@ -127,5 +133,8 @@ bad imports and argument wiring in about 2 seconds. `test_smoke_train.py` covers
 
 - **No training resume:** checkpoints are saved, but `title-opt train` can't continue from one, so a
   crash restarts that stage. Finished stages are kept.
-- **GRPO can stall:** with the judge reward off, GRPO needs titles to score differently. When every
-  title passes every rule, `reward_std` is 0 and there is almost nothing to learn from.
+- **GRPO runs out of signal:** with the judge reward off, GRPO needs titles to score differently. On
+  real data the share of groups where every title scored the same rose from 5% at the start to
+  80–95% after step 200. Length was learned first, then most of what remained came from rare
+  faithfulness failures. The later steps changed little. Turning on the judge reward
+  (`judge` > 0 in `grpo.yaml`) would add variation, at the cost of a judge call per completion.
