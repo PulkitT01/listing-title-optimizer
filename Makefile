@@ -10,7 +10,7 @@ data:             ## download Inside Airbnb snapshots and build splits
 sft:
 	uv run title-opt train -c configs/sft.yaml
 
-preferences:      ## needs $JUDGE_API_KEY (or JUDGE_MODEL=rules for an offline dry run)
+preferences:      ## needs a Claude Code login (or JUDGE_MODEL=rules for an offline dry run)
 	uv run title-opt preferences -c configs/preferences.yaml
 
 dpo:

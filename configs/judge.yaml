@@ -1,8 +1,9 @@
-# Any OpenAI-compatible chat endpoint works (OpenAI, Anthropic's OpenAI-compatible API, a local
-# vLLM or Ollama server, ...). API key is read from $JUDGE_API_KEY (or $OPENAI_API_KEY).
+# `claude-*` models run through isolated `claude -p` calls on your Claude Code login (no API key).
+# Any other model uses an OpenAI-compatible chat endpoint (OpenAI, a local vLLM or Ollama server,
+# ...) with the API key from $JUDGE_API_KEY (or $OPENAI_API_KEY).
 # $JUDGE_MODEL / $JUDGE_BASE_URL override these values. Use `model: rules` to run fully offline.
 base_url: null
-model: gpt-4.1-mini
+model: claude-sonnet-5-5
 api_key_env: JUDGE_API_KEY
 max_workers: 8
 temperature: 0.0

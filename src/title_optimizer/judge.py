@@ -11,10 +11,13 @@ import hashlib
 import json
 import os
 import re
+import subprocess
+import tempfile
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from title_optimizer.config import JudgeConfig
 from title_optimizer.rewards import length_score, style_violations, unsupported_claims
@@ -65,16 +68,9 @@ def _combine(first_order: int | None, swapped_order: int | None) -> Verdict:
 
 class LLMJudge:
     def __init__(self, cfg: JudgeConfig, cache_path: str | Path = ".cache/judge.jsonl"):
-        from openai import OpenAI
-
         self.cfg = cfg
         self.model = os.environ.get("JUDGE_MODEL", cfg.model)
-        api_key = os.environ.get(cfg.api_key_env) or os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError(f"Set ${cfg.api_key_env} (or use judge model 'rules' offline).")
-        self.client = OpenAI(
-            api_key=api_key, base_url=cfg.base_url or os.environ.get("JUDGE_BASE_URL")
-        )
+        self.client = self._make_client()
         self.cache_path = Path(cache_path)
         self.cache: dict[str, str] = {}
         self._lock = threading.Lock()
@@ -83,17 +79,30 @@ class LLMJudge:
                 item = json.loads(line)
                 self.cache[item["k"]] = item["v"]
 
-    def _ask(self, prompt: str) -> str:
-        key = hashlib.sha256(f"{self.model}\n{prompt}".encode()).hexdigest()
-        if key in self.cache:
-            return self.cache[key]
+    def _make_client(self) -> Any:
+        from openai import OpenAI
+
+        api_key = os.environ.get(self.cfg.api_key_env) or os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError(f"Set ${self.cfg.api_key_env} (or use judge model 'rules' offline).")
+        return OpenAI(
+            api_key=api_key, base_url=self.cfg.base_url or os.environ.get("JUDGE_BASE_URL")
+        )
+
+    def _complete(self, prompt: str) -> str:
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=self.cfg.temperature,
             max_tokens=5,
         )
-        answer = resp.choices[0].message.content or ""
+        return resp.choices[0].message.content or ""
+
+    def _ask(self, prompt: str) -> str:
+        key = hashlib.sha256(f"{self.model}\n{prompt}".encode()).hexdigest()
+        if key in self.cache:
+            return self.cache[key]
+        answer = self._complete(prompt)
         with self._lock:
             self.cache[key] = answer
             self.cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -120,6 +129,50 @@ class LLMJudge:
         return [parse_score(x) or 1.0 for x in self._map(self._ask, prompts)]
 
 
+class ClaudeCliJudge(LLMJudge):
+    """Judge through the Claude Code login. No API key, and no temperature control.
+
+    Every prompt is a fresh `claude -p` process in a neutral folder, so the two orders of a
+    pairwise question stay independent and no project context reaches the judge. A failed call
+    raises instead of returning, because the parsers would read digits in an error as an answer.
+    """
+
+    ISOLATION = (
+        "--tools",
+        "",
+        "--no-session-persistence",
+        "--strict-mcp-config",
+        "--setting-sources",
+        "",
+        "--disable-slash-commands",
+        "--system-prompt",
+        "Follow the user's instructions exactly.",
+    )
+
+    def _make_client(self) -> None:
+        return None
+
+    def _complete(self, prompt: str) -> str:
+        command = ["claude", "-p", prompt, "--model", self.model, *self.ISOLATION]
+        error = ""
+        for attempt in range(3):
+            time.sleep(30 * attempt)
+            with tempfile.TemporaryDirectory(prefix="judge-") as cwd:
+                proc = subprocess.run(
+                    command,
+                    cwd=cwd,
+                    stdin=subprocess.DEVNULL,  # otherwise claude waits 3 s and warns on stderr
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+            answer = proc.stdout.strip()
+            if proc.returncode == 0 and re.fullmatch(r"10|[1-9]", answer):
+                return answer
+            error = (proc.stderr or proc.stdout).strip()[:200]
+        raise RuntimeError(f"Claude judge call failed: {error}")
+
+
 class RuleJudge:
     """Deterministic stand-in judge built from the verifiable rewards. No API needed."""
 
@@ -139,7 +192,10 @@ class RuleJudge:
         return self.compare_many([description], [title_a], [title_b])[0]
 
 
-def make_judge(cfg: JudgeConfig) -> LLMJudge | RuleJudge:
-    if os.environ.get("JUDGE_MODEL", cfg.model) == "rules":
+def make_judge(cfg: JudgeConfig) -> LLMJudge | ClaudeCliJudge | RuleJudge:
+    model = os.environ.get("JUDGE_MODEL", cfg.model)
+    if model == "rules":
         return RuleJudge()
+    if model.startswith("claude-"):
+        return ClaudeCliJudge(cfg)
     return LLMJudge(cfg)

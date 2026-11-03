@@ -1,14 +1,14 @@
 test_file: data/processed/test.jsonl
 num_examples: 500
-base_model: Qwen/Qwen3-4B-Instruct-2507
+base_model: Qwen/Qwen3-1.7B
 systems:                 # name -> adapter chain applied in order (null = base model)
   base: null
   sft: [outputs/sft]
   sft+dpo: [outputs/sft, outputs/dpo]
   sft+grpo: [outputs/sft, outputs/grpo]
 max_new_tokens: 32
-batch_size: 16
+batch_size: 4
 judge:
-  model: gpt-4.1-mini
+  model: claude-sonnet-5-5
 output_dir: results
 seed: 42

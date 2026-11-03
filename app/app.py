@@ -1,7 +1,7 @@
 """Gradio demo: paste a listing description, get title suggestions with a faithfulness check.
 
 Deploy to Hugging Face Spaces by copying this file and setting MODEL_ID / ADAPTERS, e.g.
-MODEL_ID=Qwen/Qwen3-4B-Instruct-2507 ADAPTERS=<your-hf-user>/title-optimizer-sft,<your-hf-user>/title-optimizer-grpo
+MODEL_ID=Qwen/Qwen3-1.7B ADAPTERS=<your-hf-user>/title-optimizer-sft,<your-hf-user>/title-optimizer-grpo
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import gradio as gr
 from title_optimizer.modeling import generate_titles, load_model, load_tokenizer
 from title_optimizer.rewards import style_violations, unsupported_claims
 
-MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen3-4B-Instruct-2507")
+MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen3-1.7B")
 ADAPTERS = [a for a in os.environ.get("ADAPTERS", "outputs/sft,outputs/grpo").split(",") if a]
 
 tok = load_tokenizer(MODEL_ID)

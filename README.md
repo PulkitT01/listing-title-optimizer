@@ -13,25 +13,29 @@ SFT → DPO → GRPO with verifiable rewards, on public Inside Airbnb data, repr
 
 ## Results
 
-> _Fill in after `make eval`. The table is generated in [`results/RESULTS.md`](results/RESULTS.md)._
-
-Held-out listings from hosts never seen in training. Win rate = LLM-judge pairwise preference vs the
-host's original title (order-swapped, ties = ½), with a 95% bootstrap CI.
+500 held-out listings from hosts never seen in training, `Qwen/Qwen3-1.7B` trained on my M4 Mac. Win
+rate = `claude-sonnet-5-5` pairwise preference vs the host's original title (order-swapped,
+ties = ½), with a 95% bootstrap CI. Generated in [`results/RESULTS.md`](results/RESULTS.md).
 
 | System | Win rate vs original (95% CI) | Hallucination ↓ | ≤50 chars ↑ | Style issues ↓ |
 |---|---|---|---|---|
-| Original (host) | — | x% | x% | x% |
-| Base model | x% | x% | x% | x% |
-| SFT | x% | x% | x% | x% |
-| SFT + DPO | x% | x% | x% | x% |
-| SFT + GRPO | x% | x% | x% | x% |
+| Original (host) | — | 3.0% | 100.0% | 2.4% |
+| Base model | 36.1% (32.1–40.2%) | 4.0% | 23.8% | 0.4% |
+| SFT | 65.3% (61.3–69.4%) | 0.8% | 97.2% | 0.0% |
+| SFT + DPO | **68.5%** (64.4–72.3%) | **0.2%** | 99.8% | 0.0% |
+| SFT + GRPO | 67.7% (63.8–71.4%) | **0.2%** | **100.0%** | 0.0% |
 
-**Judge reliability:** the LLM judge agrees with my own labels on _x%_ of 200 pairs
-(Cohen's κ = _x_).
+SFT does most of the work. DPO and GRPO both cut hallucinations further and land within each other's
+confidence intervals, so neither clearly beats the other at this scale.
+
+**Judge reliability:** _pending: I still need to hand-label 200 pairs to check how often the judge
+agrees with me (`title-opt judge-agreement`)._
 
 | Listing (excerpt) | Original | SFT + GRPO |
 |---|---|---|
-| _…_ | _…_ | _…_ |
+| Steps from Central Park … family-friendly two bedroom … ground floor of a brownstone with its own private garden | Lenox Hill two bedroom w/ garden | Brownstone Garden Apt in Upper East |
+| Murray Hill, one block from the river … Midtown luxury apartments … gorgeous rooftop deck | Furnished nr Time Sqr 1BR nr East River | Luxury Midtown Apartment with Rooftop Deck |
+| A bright double room … in a riverside apartment on the Liffey, with your own bathroom … | Room with Private Bathroom | Double room in riverside apartment |
 
 ## Why this project
 
@@ -66,22 +70,25 @@ flowchart LR
 |---|---|---|
 | Data | Download, clean, filter English, drop Airbnb's auto-generated titles, split by host | [`data/`](src/title_optimizer/data) |
 | Rewards | Hallucinated-amenity detector, length and style checks (TRL reward signature) | [`rewards.py`](src/title_optimizer/rewards.py) |
-| Judge | OpenAI-compatible LLM judge with order swapping and caching; offline rule judge | [`judge.py`](src/title_optimizer/judge.py) |
+| Judge | Claude Code or OpenAI-compatible LLM judge with order swapping and caching; offline rule judge | [`judge.py`](src/title_optimizer/judge.py) |
 | Preferences | Candidates → rule filter → judge → DPO pairs | [`preferences.py`](src/title_optimizer/preferences.py) |
 | Training | SFT / DPO / GRPO with TRL + LoRA (optional QLoRA) | [`train.py`](src/title_optimizer/train.py) |
 | Evaluation | Win rate with CIs, hallucination rate, judge–human agreement | [`evaluate.py`](src/title_optimizer/evaluate.py) |
 
 ## Quickstart
 
-Requires [uv](https://docs.astral.sh/uv/). Training needs one GPU (24 GB for bf16 LoRA on the 4B
-model; set `load_in_4bit: true` for ~12 GB). Everything else runs on CPU.
+Requires [uv](https://docs.astral.sh/uv/). Training runs on one GPU or a 24 GB Apple Silicon Mac,
+where the 1.7B model peaks around 13 GB and a full run takes about 18 hours (stage times in
+[`docs/design-decisions.md`](docs/design-decisions.md)). On a Mac, run long stages under
+`caffeinate -ims` so it doesn't sleep. `load_in_4bit: true` needs an NVIDIA GPU. Everything else
+runs on CPU.
 
 ```bash
 git clone https://github.com/PulkitT01/listing-title-optimizer && cd listing-title-optimizer
 uv sync                      # add --extra cuda for QLoRA, --extra app for the demo
 make test-all                # unit tests + an offline end-to-end run on a tiny model
 
-export JUDGE_API_KEY=...     # any OpenAI-compatible endpoint, see configs/judge.yaml
+claude                       # log in to Claude Code once; the judge runs on it, see configs/judge.yaml
 make all                     # data → sft → preferences → dpo → grpo → eval
 ```
 
@@ -99,7 +106,7 @@ uv run title-opt judge-agreement                 # how much should we trust the 
 uv run title-opt evaluate -c configs/eval.yaml   # → results/RESULTS.md
 ```
 
-No API key? `JUDGE_MODEL=rules` swaps in a deterministic rule-based judge so the whole pipeline
+No Claude Code? `JUDGE_MODEL=rules` swaps in a deterministic rule-based judge so the whole pipeline
 runs offline (results then only reflect the verifiable rewards).
 
 ## Data
@@ -107,13 +114,14 @@ runs offline (results then only reflect the verifiable rewards).
 [Inside Airbnb](https://insideairbnb.com/get-the-data/) quarterly snapshots (London, New York,
 Sydney, Toronto, Dublin by default), licensed **CC BY 4.0**. Fields used: `name` (title),
 `description`, `amenities`, `property_type`, `neighbourhood_cleansed`, `number_of_reviews`,
-`reviews_per_month`, `review_scores_rating`.
+`reviews_per_month`, `review_scores_rating`. The results above use the September 2026 snapshots
+(14–17 Sep): 171,503 raw listings, 142,919 after cleaning.
 
 Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/prepare.py)):
 
-- **Many recent `name` values aren't host titles.** Since 2023, a large share of rows contain
-  Airbnb's generated card text (`Rental unit in Brooklyn · ★4.9 · 1 bedroom · 1 bed · 1 bath`).
-  These are detected and dropped; `stats.json` reports how many.
+- **Some `name` values aren't host titles.** Some snapshots contain Airbnb's generated card text
+  (`Rental unit in Brooklyn · ★4.9 · 1 bedroom · 1 bed · 1 bath`). These are detected and dropped;
+  `stats.json` reports how many. The September 2026 snapshots had only 161.
 - **Descriptions contain HTML**, which is stripped.
 - **Engagement is a weak label.** "High engagement" means at least 5 reviews, a rating of 4.7 or
   higher, and reviews/month in the top third *within the same city*. Price, photos and location
@@ -125,9 +133,9 @@ Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/pre
 
 ## Design decisions
 
-- **Model:** `Qwen/Qwen3-4B-Instruct-2507` (Apache-2.0, non-thinking, so all 32 completion tokens go
-  to the title). Swap in any chat model via `base_model`. If you use a hybrid-thinking model,
-  disable thinking first.
+- **Model:** `Qwen/Qwen3-1.7B` (Apache-2.0), small enough to train on a Mac. It's a hybrid-thinking
+  model, so `load_tokenizer` turns thinking off and all 32 completion tokens go to the title. Swap
+  in any chat model via `base_model`.
 - **Adapters are chained:** DPO and GRPO train a fresh LoRA on top of the *merged* SFT model, so SFT
   is also the DPO reference model. Evaluation applies the same chain (`[sft, dpo]`).
 - **Judge bias controls:** pairwise prompts are asked in both orders, and disagreement counts as a
@@ -155,6 +163,8 @@ Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/pre
 ├── app/app.py               # Gradio demo (HF Spaces)
 ├── tests/                   # unit tests + offline tiny-model end-to-end test
 ├── results/                 # committed metrics and samples
+├── docs/                    # design decisions, measured stage times, known limitations
+├── TODO.md                  # open tasks
 └── Makefile
 ```
 

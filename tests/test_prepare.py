@@ -1,5 +1,6 @@
 import json
 
+import pandas as pd
 import pytest
 
 from title_optimizer.config import DataConfig
@@ -85,3 +86,19 @@ def test_prepare_end_to_end(raw_listings, tmp_path):
     assert sft[0]["prompt"][0]["role"] == "system"
     assert sft[0]["completion"][0]["role"] == "assistant"
     json.loads((tmp_path / "processed" / "stats.json").read_text())
+
+
+def test_prepare_mixes_cities(raw_listings, tmp_path, monkeypatch):
+    by_city = pd.DataFrame({"city": ["dublin"] * 50 + ["london"] * 50})
+    monkeypatch.setattr("title_optimizer.data.prepare.clean", lambda df, cfg: (by_city, {}))
+    seen = []
+
+    def capture_split(df, *args):
+        seen.append(df)
+        return {}
+
+    monkeypatch.setattr("title_optimizer.data.prepare.group_split", capture_split)
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    prepare(DataConfig(raw_dir=str(raw_listings.parent), processed_dir=str(processed)))
+    assert set(seen[0]["city"].head(20)) == {"dublin", "london"}

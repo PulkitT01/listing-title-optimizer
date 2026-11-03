@@ -28,6 +28,9 @@ def load_tokenizer(name: str) -> PreTrainedTokenizerBase:
     tok = AutoTokenizer.from_pretrained(name)
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
+    # Titles only get ~32 tokens, so hybrid-thinking models must answer directly at every stage.
+    if "enable_thinking" in (tok.chat_template or ""):
+        tok.chat_template = "{%- set enable_thinking = false -%}\n" + tok.chat_template
     return tok
 
 
