@@ -1,0 +1,56 @@
+{
+  "original (host)": {
+    "hallucination_rate": 0.03,
+    "length_ok_rate": 1.0,
+    "style_violation_rate": 0.024,
+    "mean_chars": 38.648
+  },
+  "base": {
+    "hallucination_rate": 0.04,
+    "length_ok_rate": 0.238,
+    "style_violation_rate": 0.004,
+    "mean_chars": 60.744,
+    "win_rate_vs_original": 0.361,
+    "win_rate_ci_low": 0.321,
+    "win_rate_ci_high": 0.402,
+    "wins": 161,
+    "ties": 39,
+    "losses": 300
+  },
+  "sft": {
+    "hallucination_rate": 0.008,
+    "length_ok_rate": 0.972,
+    "style_violation_rate": 0.0,
+    "mean_chars": 33.47,
+    "win_rate_vs_original": 0.653,
+    "win_rate_ci_low": 0.613,
+    "win_rate_ci_high": 0.694,
+    "wins": 310,
+    "ties": 33,
+    "losses": 157
+  },
+  "sft+dpo": {
+    "hallucination_rate": 0.002,
+    "length_ok_rate": 0.998,
+    "style_violation_rate": 0.0,
+    "mean_chars": 25.746,
+    "win_rate_vs_original": 0.685,
+    "win_rate_ci_low": 0.644,
+    "win_rate_ci_high": 0.723,
+    "wins": 331,
+    "ties": 23,
+    "losses": 146
+  },
+  "sft+grpo": {
+    "hallucination_rate": 0.002,
+    "length_ok_rate": 1.0,
+    "style_violation_rate": 0.0,
+    "mean_chars": 32.404,
+    "win_rate_vs_original": 0.677,
+    "win_rate_ci_low": 0.638,
+    "win_rate_ci_high": 0.7140249999999998,
+    "wins": 325,
+    "ties": 27,
+    "losses": 148
+  }
+}

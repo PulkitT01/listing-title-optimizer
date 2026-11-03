@@ -13,25 +13,29 @@ SFT → DPO → GRPO with verifiable rewards, on public Inside Airbnb data, repr
 
 ## Results
 
-> _Fill in after `make eval`. The table is generated in [`results/RESULTS.md`](results/RESULTS.md)._
-
-Held-out listings from hosts never seen in training. Win rate = LLM-judge pairwise preference vs the
-host's original title (order-swapped, ties = ½), with a 95% bootstrap CI.
+500 held-out listings from hosts never seen in training, `Qwen/Qwen3-1.7B` trained on an M4 Mac. Win
+rate = `claude-sonnet-5-5` pairwise preference vs the host's original title (order-swapped,
+ties = ½), with a 95% bootstrap CI. Generated in [`results/RESULTS.md`](results/RESULTS.md).
 
 | System | Win rate vs original (95% CI) | Hallucination ↓ | ≤50 chars ↑ | Style issues ↓ |
 |---|---|---|---|---|
-| Original (host) | — | x% | x% | x% |
-| Base model | x% | x% | x% | x% |
-| SFT | x% | x% | x% | x% |
-| SFT + DPO | x% | x% | x% | x% |
-| SFT + GRPO | x% | x% | x% | x% |
+| Original (host) | — | 3.0% | 100.0% | 2.4% |
+| Base model | 36.1% (32.1–40.2%) | 4.0% | 23.8% | 0.4% |
+| SFT | 65.3% (61.3–69.4%) | 0.8% | 97.2% | 0.0% |
+| SFT + DPO | **68.5%** (64.4–72.3%) | **0.2%** | 99.8% | 0.0% |
+| SFT + GRPO | 67.7% (63.8–71.4%) | **0.2%** | **100.0%** | 0.0% |
 
-**Judge reliability:** the LLM judge agrees with my own labels on _x%_ of 200 pairs
-(Cohen's κ = _x_).
+SFT does most of the work. DPO and GRPO both cut hallucinations further and land within each other's
+confidence intervals, so neither clearly beats the other at this scale.
+
+**Judge reliability:** _pending: the judge–human agreement check (`title-opt judge-agreement`)
+needs 200 hand-labelled pairs._
 
 | Listing (excerpt) | Original | SFT + GRPO |
 |---|---|---|
-| _…_ | _…_ | _…_ |
+| Steps from Central Park … family-friendly two bedroom … ground floor of a brownstone with its own private garden | Lenox Hill two bedroom w/ garden | Brownstone Garden Apt in Upper East |
+| Murray Hill, one block from the river … Midtown luxury apartments … gorgeous rooftop deck | Furnished nr Time Sqr 1BR nr East River | Luxury Midtown Apartment with Rooftop Deck |
+| A bright double room … in a riverside apartment on the Liffey, with your own bathroom … | Room with Private Bathroom | Double room in riverside apartment |
 
 ## Why this project
 
