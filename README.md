@@ -13,7 +13,7 @@ SFT → DPO → GRPO with verifiable rewards, on public Inside Airbnb data, repr
 
 ## Results
 
-500 held-out listings from hosts never seen in training, `Qwen/Qwen3-1.7B` trained on an M4 Mac. Win
+500 held-out listings from hosts never seen in training, `Qwen/Qwen3-1.7B` trained on my M4 Mac. Win
 rate = `claude-sonnet-5-5` pairwise preference vs the host's original title (order-swapped,
 ties = ½), with a 95% bootstrap CI. Generated in [`results/RESULTS.md`](results/RESULTS.md).
 
@@ -28,8 +28,8 @@ ties = ½), with a 95% bootstrap CI. Generated in [`results/RESULTS.md`](results
 SFT does most of the work. DPO and GRPO both cut hallucinations further and land within each other's
 confidence intervals, so neither clearly beats the other at this scale.
 
-**Judge reliability:** _pending: the judge–human agreement check (`title-opt judge-agreement`)
-needs 200 hand-labelled pairs._
+**Judge reliability:** _pending: I still need to hand-label 200 pairs to check how often the judge
+agrees with me (`title-opt judge-agreement`)._
 
 | Listing (excerpt) | Original | SFT + GRPO |
 |---|---|---|
@@ -78,8 +78,10 @@ flowchart LR
 ## Quickstart
 
 Requires [uv](https://docs.astral.sh/uv/). Training runs on one GPU or a 24 GB Apple Silicon Mac,
-where the 1.7B model peaks around 13 GB and a full run takes a day or more. `load_in_4bit: true`
-needs an NVIDIA GPU. Everything else runs on CPU.
+where the 1.7B model peaks around 13 GB and a full run takes about 18 hours (stage times in
+[`docs/design-decisions.md`](docs/design-decisions.md)). On a Mac, run long stages under
+`caffeinate -ims` so it doesn't sleep. `load_in_4bit: true` needs an NVIDIA GPU. Everything else
+runs on CPU.
 
 ```bash
 git clone https://github.com/PulkitT01/listing-title-optimizer && cd listing-title-optimizer
@@ -112,13 +114,14 @@ runs offline (results then only reflect the verifiable rewards).
 [Inside Airbnb](https://insideairbnb.com/get-the-data/) quarterly snapshots (London, New York,
 Sydney, Toronto, Dublin by default), licensed **CC BY 4.0**. Fields used: `name` (title),
 `description`, `amenities`, `property_type`, `neighbourhood_cleansed`, `number_of_reviews`,
-`reviews_per_month`, `review_scores_rating`.
+`reviews_per_month`, `review_scores_rating`. The results above use the September 2026 snapshots
+(14–17 Sep): 171,503 raw listings, 142,919 after cleaning.
 
 Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/prepare.py)):
 
-- **Many recent `name` values aren't host titles.** Since 2023, a large share of rows contain
-  Airbnb's generated card text (`Rental unit in Brooklyn · ★4.9 · 1 bedroom · 1 bed · 1 bath`).
-  These are detected and dropped; `stats.json` reports how many.
+- **Some `name` values aren't host titles.** Some snapshots contain Airbnb's generated card text
+  (`Rental unit in Brooklyn · ★4.9 · 1 bedroom · 1 bed · 1 bath`). These are detected and dropped;
+  `stats.json` reports how many. The September 2026 snapshots had only 161.
 - **Descriptions contain HTML**, which is stripped.
 - **Engagement is a weak label.** "High engagement" means at least 5 reviews, a rating of 4.7 or
   higher, and reviews/month in the top third *within the same city*. Price, photos and location
@@ -160,6 +163,8 @@ Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/pre
 ├── app/app.py               # Gradio demo (HF Spaces)
 ├── tests/                   # unit tests + offline tiny-model end-to-end test
 ├── results/                 # committed metrics and samples
+├── docs/                    # design decisions, measured stage times, known limitations
+├── TODO.md                  # open tasks
 └── Makefile
 ```
 
