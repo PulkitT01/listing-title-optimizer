@@ -35,6 +35,12 @@ def test_shipped_configs_load(name, cls):
         cfg.judge_config()
 
 
+def test_city_slugs_stay_strings():
+    # YAML reads a bare `on` as True, which turned Ontario's slug into canada/True/toronto.
+    cities = load_config(CONFIGS / "data.yaml", DataConfig).cities
+    assert all(isinstance(v, str) for c in cities for k, v in c.items() if k != "date")
+
+
 def test_unknown_keys_fail(tmp_path):
     p = tmp_path / "bad.yaml"
     p.write_text("stage: sft\nlearning_rat: 1e-4\n")

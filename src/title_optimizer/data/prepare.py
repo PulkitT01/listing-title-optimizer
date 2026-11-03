@@ -203,6 +203,8 @@ def prepare(cfg: DataConfig, raw_paths: list[Path] | None = None) -> dict[str, i
         raise FileNotFoundError(f"No *_listings.csv.gz in {cfg.raw_dir}. Run `title-opt download`.")
 
     df, stats = clean(load_raw(raw_paths), cfg)
+    # Raw files arrive city by city; mix them so `max_train_samples` isn't a single city.
+    df = df.sample(frac=1, random_state=cfg.seed)
     splits = group_split(df, cfg.test_fraction, cfg.val_fraction, cfg.seed)
     out = Path(cfg.processed_dir)
 

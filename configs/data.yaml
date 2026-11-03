@@ -5,7 +5,7 @@ cities:
   - {country: united-kingdom, region: england, city: london, date: latest}
   - {country: united-states, region: ny, city: new-york-city, date: latest}
   - {country: australia, region: nsw, city: sydney, date: latest}
-  - {country: canada, region: on, city: toronto, date: latest}
+  - {country: canada, region: "on", city: toronto, date: latest}
   - {country: ireland, region: leinster, city: dublin, date: latest}
 
 raw_dir: data/raw
