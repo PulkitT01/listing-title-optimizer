@@ -11,7 +11,7 @@ from rich.console import Console
 
 from title_optimizer.config import JudgeConfig, TrainConfig
 from title_optimizer.data.prepare import read_jsonl
-from title_optimizer.modeling import load_model, load_tokenizer, lora_config, use_bf16
+from title_optimizer.modeling import device, load_model, load_tokenizer, lora_config, use_bf16
 from title_optimizer.prompts import build_messages
 from title_optimizer.rewards import REWARD_FUNCS, make_judge_reward
 
@@ -32,7 +32,7 @@ def _common_args(cfg: TrainConfig) -> dict[str, Any]:
         "seed": cfg.seed,
         "report_to": cfg.report_to,
         "bf16": cfg.bf16 and use_bf16(),
-        "gradient_checkpointing": use_bf16(),
+        "gradient_checkpointing": device() != "cpu",
         "lr_scheduler_type": "cosine",
         "warmup_steps": 0.05,  # float < 1 = ratio of total steps
     }

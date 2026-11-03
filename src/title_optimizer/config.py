@@ -43,7 +43,7 @@ class DataConfig:
 
 @dataclass
 class ModelConfig:
-    base_model: str = "Qwen/Qwen3-4B-Instruct-2507"
+    base_model: str = "Qwen/Qwen3-1.7B"
     load_in_4bit: bool = False
     lora_r: int = 16
     lora_alpha: int = 32
@@ -98,7 +98,7 @@ class JudgeConfig:
 
 @dataclass
 class PreferenceConfig:
-    policy_model: str = "Qwen/Qwen3-4B-Instruct-2507"
+    policy_model: str = "Qwen/Qwen3-1.7B"
     policy_adapter: str | None = "outputs/sft"
     input_file: str = "data/processed/train.jsonl"
     output_file: str = "data/preferences/dpo_train.jsonl"
@@ -119,7 +119,7 @@ class PreferenceConfig:
 class EvalConfig:
     test_file: str = "data/processed/test.jsonl"
     num_examples: int = 500
-    base_model: str = "Qwen/Qwen3-4B-Instruct-2507"
+    base_model: str = "Qwen/Qwen3-1.7B"
     # name -> adapter chain (null = base model). Each system is compared against the original titles.
     systems: dict[str, str | list[str] | None] = field(default_factory=lambda: {"base": None})
     max_new_tokens: int = 32

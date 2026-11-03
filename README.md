@@ -66,22 +66,23 @@ flowchart LR
 |---|---|---|
 | Data | Download, clean, filter English, drop Airbnb's auto-generated titles, split by host | [`data/`](src/title_optimizer/data) |
 | Rewards | Hallucinated-amenity detector, length and style checks (TRL reward signature) | [`rewards.py`](src/title_optimizer/rewards.py) |
-| Judge | OpenAI-compatible LLM judge with order swapping and caching; offline rule judge | [`judge.py`](src/title_optimizer/judge.py) |
+| Judge | Claude Code or OpenAI-compatible LLM judge with order swapping and caching; offline rule judge | [`judge.py`](src/title_optimizer/judge.py) |
 | Preferences | Candidates → rule filter → judge → DPO pairs | [`preferences.py`](src/title_optimizer/preferences.py) |
 | Training | SFT / DPO / GRPO with TRL + LoRA (optional QLoRA) | [`train.py`](src/title_optimizer/train.py) |
 | Evaluation | Win rate with CIs, hallucination rate, judge–human agreement | [`evaluate.py`](src/title_optimizer/evaluate.py) |
 
 ## Quickstart
 
-Requires [uv](https://docs.astral.sh/uv/). Training needs one GPU (24 GB for bf16 LoRA on the 4B
-model; set `load_in_4bit: true` for ~12 GB). Everything else runs on CPU.
+Requires [uv](https://docs.astral.sh/uv/). Training runs on one GPU or a 24 GB Apple Silicon Mac,
+where the 1.7B model peaks around 13 GB and a full run takes a day or more. `load_in_4bit: true`
+needs an NVIDIA GPU. Everything else runs on CPU.
 
 ```bash
 git clone https://github.com/PulkitT01/listing-title-optimizer && cd listing-title-optimizer
 uv sync                      # add --extra cuda for QLoRA, --extra app for the demo
 make test-all                # unit tests + an offline end-to-end run on a tiny model
 
-export JUDGE_API_KEY=...     # any OpenAI-compatible endpoint, see configs/judge.yaml
+claude                       # log in to Claude Code once; the judge runs on it, see configs/judge.yaml
 make all                     # data → sft → preferences → dpo → grpo → eval
 ```
 
@@ -99,7 +100,7 @@ uv run title-opt judge-agreement                 # how much should we trust the 
 uv run title-opt evaluate -c configs/eval.yaml   # → results/RESULTS.md
 ```
 
-No API key? `JUDGE_MODEL=rules` swaps in a deterministic rule-based judge so the whole pipeline
+No Claude Code? `JUDGE_MODEL=rules` swaps in a deterministic rule-based judge so the whole pipeline
 runs offline (results then only reflect the verifiable rewards).
 
 ## Data
@@ -125,9 +126,9 @@ Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/pre
 
 ## Design decisions
 
-- **Model:** `Qwen/Qwen3-4B-Instruct-2507` (Apache-2.0, non-thinking, so all 32 completion tokens go
-  to the title). Swap in any chat model via `base_model`. If you use a hybrid-thinking model,
-  disable thinking first.
+- **Model:** `Qwen/Qwen3-1.7B` (Apache-2.0), small enough to train on a Mac. It's a hybrid-thinking
+  model, so `load_tokenizer` turns thinking off and all 32 completion tokens go to the title. Swap
+  in any chat model via `base_model`.
 - **Adapters are chained:** DPO and GRPO train a fresh LoRA on top of the *merged* SFT model, so SFT
   is also the DPO reference model. Evaluation applies the same chain (`[sft, dpo]`).
 - **Judge bias controls:** pairwise prompts are asked in both orders, and disagreement counts as a
