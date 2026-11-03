@@ -158,7 +158,14 @@ class ClaudeCliJudge(LLMJudge):
         for attempt in range(3):
             time.sleep(30 * attempt)
             with tempfile.TemporaryDirectory(prefix="judge-") as cwd:
-                proc = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=120)
+                proc = subprocess.run(
+                    command,
+                    cwd=cwd,
+                    stdin=subprocess.DEVNULL,  # otherwise claude waits 3 s and warns on stderr
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
             answer = proc.stdout.strip()
             if proc.returncode == 0 and re.fullmatch(r"10|[1-9]", answer):
                 return answer
