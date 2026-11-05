@@ -7,7 +7,7 @@ SFT → DPO → GRPO with verifiable rewards, on public Inside Airbnb data, repr
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-🤗 **Demo:** _link to HF Space_ · **Model:** _link to HF model_ · **Dataset:** _link to HF dataset_
+🤗 **Models:** [SFT](https://huggingface.co/pulkit-thukral/title-optimizer-sft), [DPO](https://huggingface.co/pulkit-thukral/title-optimizer-dpo), [GRPO](https://huggingface.co/pulkit-thukral/title-optimizer-grpo) · **Dataset:** [listing-title-optimizer](https://huggingface.co/datasets/pulkit-thukral/listing-title-optimizer)
 
 ---
 
@@ -28,8 +28,11 @@ ties = ½), with a 95% bootstrap CI. Generated in [`results/RESULTS.md`](results
 SFT does most of the work. DPO and GRPO both cut hallucinations further and land within each other's
 confidence intervals, so neither clearly beats the other at this scale.
 
-**Judge reliability:** _pending: I still need to hand-label 200 pairs to check how often the judge
-agrees with me (`title-opt judge-agreement`)._
+**Judge reliability:** fair at best. I hand-labelled 50 DPO preference pairs, and the Sonnet judge
+agreed with me on 64% of them (95% CI 50–78%; Cohen's κ = 0.29, CI 0.04–0.56). These pairs are the
+best and worst of the model's own candidates after the verifiable checks, so they are hard to tell
+apart, but read the win rates as "Sonnet prefers it" rather than as a checked human preference. The
+hallucination, length and style columns are rule-based and don't use the judge.
 
 | Listing (excerpt) | Original | SFT + GRPO |
 |---|---|---|
