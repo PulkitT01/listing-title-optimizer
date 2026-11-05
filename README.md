@@ -7,7 +7,7 @@ SFT → DPO → GRPO with verifiable rewards, on public Inside Airbnb data, repr
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-🤗 **Demo:** _link to HF Space_ · **Model:** _link to HF model_ · **Dataset:** _link to HF dataset_
+🤗 **Demo:** _link to HF Space_ · **Models:** [SFT](https://huggingface.co/pulkit-thukral/title-optimizer-sft), [DPO](https://huggingface.co/pulkit-thukral/title-optimizer-dpo), [GRPO](https://huggingface.co/pulkit-thukral/title-optimizer-grpo) · **Dataset:** [listing-title-optimizer](https://huggingface.co/datasets/pulkit-thukral/listing-title-optimizer)
 
 ---
 
