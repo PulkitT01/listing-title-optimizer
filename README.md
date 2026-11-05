@@ -99,12 +99,12 @@ Every stage is one command with one YAML config:
 
 ```bash
 uv run title-opt download                        # Inside Airbnb snapshots → data/raw (+ MANIFEST.json)
-uv run title-opt prepare                         # → data/processed/{train,val,test,sft_train}.jsonl
+uv run title-opt prepare                         # → data/processed/{train,val,test,sft_train,sft_val}.jsonl
 uv run title-opt train -c configs/sft.yaml
 uv run title-opt preferences -c configs/preferences.yaml
 uv run title-opt train -c configs/dpo.yaml
 uv run title-opt train -c configs/grpo.yaml --judge-config configs/judge.yaml
-uv run title-opt label data/preferences/dpo_train.jsonl  # label 200 pairs yourself
+uv run title-opt label data/preferences/dpo_train.jsonl --n 50  # label 50 pairs yourself
 uv run title-opt judge-agreement                 # how much should we trust the judge?
 uv run title-opt evaluate -c configs/eval.yaml   # → results/RESULTS.md
 ```
@@ -131,8 +131,9 @@ Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/pre
   confound it, so it's used only to pick SFT targets, never as ground truth.
 - **Splits are by host**, so templated titles from multi-listing hosts can't leak into the test set.
 - **Free snapshots rotate out after ~12 months.** Resolved URLs and SHA-256 hashes are written to
-  `data/raw/MANIFEST.json`, and the processed dataset is published on the Hugging Face Hub so results
-  stay reproducible.
+  `data/raw/MANIFEST.json`, and the processed dataset is
+  [published on the Hugging Face Hub](https://huggingface.co/datasets/pulkit-thukral/listing-title-optimizer)
+  so results stay reproducible.
 
 ## Design decisions
 
@@ -163,11 +164,11 @@ Things worth knowing (and handled in [`prepare.py`](src/title_optimizer/data/pre
 │   ├── data/                # download.py, prepare.py
 │   ├── prompts.py  rewards.py  judge.py  modeling.py
 │   ├── preferences.py  train.py  evaluate.py  cli.py
-├── app/app.py               # Gradio demo (HF Spaces)
+├── app/app.py               # Gradio demo (run locally)
 ├── tests/                   # unit tests + offline tiny-model end-to-end test
 ├── results/                 # committed metrics and samples
 ├── docs/                    # design decisions, measured stage times, known limitations
-├── TODO.md                  # open tasks
+├── TODO.md                  # notes and ideas
 └── Makefile
 ```
 
