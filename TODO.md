@@ -1,34 +1,17 @@
 # TODO
 
-Where things stand (3 Nov 2026): I've run the full pipeline once on my M4 Mac (24 GB), and the
-results are in the README. Training outputs, data and the judge cache are git-ignored, so they only
-exist on that Mac.
-
-## Next
-
-- [ ] **Measure judge–human agreement.** Label 200 pairs myself, then compare them with the Sonnet
-  judge (about 400 judge calls):
-  ```bash
-  uv run title-opt label data/preferences/dpo_train.jsonl   # writes data/human_labels.jsonl
-  uv run title-opt judge-agreement
-  ```
-  Then put the agreement and Cohen's κ in the README's "Judge reliability" line. `data/` is
-  git-ignored, so back up `human_labels.jsonl` somewhere else.
-- [ ] **Publish to the Hugging Face Hub** and fill in the README's Demo, Model and Dataset links:
-  - adapters: `outputs/sft`, `outputs/dpo`, `outputs/grpo` (LoRA on `Qwen/Qwen3-1.7B`, chained:
-    DPO and GRPO apply on top of SFT)
-  - dataset: `data/processed/` plus `data/raw/MANIFEST.json`. The README already says the processed
-    data is on the Hub, but it isn't yet. The September 2026 snapshots rotate off Inside Airbnb
-    around September 2027, and after that the results can't be reproduced without this upload.
-  - demo: deploy `app/app.py` as a Space with `MODEL_ID=Qwen/Qwen3-1.7B` and `ADAPTERS` set to the
-    SFT and GRPO repos
-- [ ] **Merge `mac-training`** through a PR.
+Where things stand (5 Nov 2026): the project is done. The full pipeline has run on my M4 Mac
+(24 GB), the results and judge–human agreement are in the README, and the adapters and dataset are
+on the Hugging Face Hub. There's no demo, because Gradio Spaces need a paid plan. Training outputs,
+data and the judge cache are git-ignored, so they only exist on that Mac.
 
 ## Don't delete
 
-- `.cache/judge.jsonl` (6,353 judgments). Reruns of preferences or eval skip anything in it, which
-  saves hours and Claude usage.
+- `.cache/judge.jsonl`. Reruns of preferences or eval skip anything in it, which saves hours and
+  Claude usage.
 - `outputs/` (about 1 GB). Retraining everything takes about 17 hours.
+- `data/human_labels.jsonl` (my 50 labels behind the README's judge agreement; backed up in
+  `~/human_labels_run2.backup.jsonl`).
 
 ## Ideas
 
